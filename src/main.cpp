@@ -24,7 +24,7 @@ struct Block {
 class Tetramino {
   private:
 	uint16_t pattern[4]; // Binary numbers each representing a 4x4 grid rotation
-	int x_offset = GRID_WIDTH / 2;
+	int x_offset = 3;
 	int y_offset = -1;
 	int pattern_idx = 0;
 
@@ -54,11 +54,9 @@ class Tetramino {
 	void create_blocks(uint16_t pattern, Color color) {
 		int x = 0;
 		size_t block_counter = 0; // should never exceed 3 (max index of `blocks`)
-		printf("--- Create blocks ---\n");
 
 		for (uint i = 1; i < 16; ++i) {
 			int y = i % 4;
-			printf("x: %d y: %d\n", x, y);
 			if (y == 0) {
 				++x;
 			}
@@ -80,7 +78,7 @@ class Tetramino {
 		} else {
 			++pattern_idx;
 		}
-		printf("pattern_idx: %d", pattern_idx);
+		TraceLog(LOG_DEBUG, "pattern_idx: %d", pattern_idx);
 		create_blocks(pattern[pattern_idx], blocks[0].color);
 	}
 
@@ -129,10 +127,10 @@ Tetramino create_l_tet() {
 }
 Tetramino create_o_tet() {
 	uint16_t pattern[4] = {
-		0b0000'0110'0110'0000,
-		0b0000'0110'0110'0000,
-		0b0000'0110'0110'0000,
-		0b0000'0110'0110'0000,
+		0b0000'0011'0011'0000,
+		0b0000'0011'0011'0000,
+		0b0000'0011'0011'0000,
+		0b0000'0011'0011'0000,
 	};
 	return Tetramino(YELLOW, pattern);
 }
@@ -165,8 +163,7 @@ static bool bag[7] = {
 	true, // 5: s
 	true, // 6: z
 };
-
-static std::default_random_engine generator;
+static std::ranlux24 generator;
 static std::uniform_int_distribution<int> distribution(0, 6);
 
 Tetramino create_random_tet() {
@@ -259,13 +256,13 @@ Collision check_collision(Block tet[4], std::vector<Block> board) {
 		}
 	}
 
-	if (lowest_y == GRID_HEIGHT - 1) {
+	if (lowest_y >= GRID_HEIGHT - 1) {
 		col.down = true;
 	}
-	if (rightest_x == GRID_WIDTH - 1) {
+	if (rightest_x >= GRID_WIDTH - 1) {
 		col.right = true;
 	}
-	if (leftest_x == 0) {
+	if (leftest_x <= 0) {
 		col.left = true;
 	}
 
@@ -292,6 +289,36 @@ void move(Tetramino *t, Collision c) {
 
 void draw_blocks(std::vector<Block> blocks);
 
+// Returns a `tuple<int, vector<Block>>`, where the int is the number of lines cleared,
+// and the vector is the transformed vector of blocks
+std::tuple<int, std::vector<Block>> clear_blocks(std::vector<Block> blocks) {
+	int clear_count = 0;
+	std::map<int, std::vector<Block>> rows;
+
+	for (const auto &b : blocks) {
+		rows[b.pos.y].push_back(b);
+	}
+
+	for (int i = 0 - 4; i < GRID_HEIGHT; ++i) {
+		if (rows[i].size() >= GRID_WIDTH) {
+			rows[i].clear();
+			for (int j = i - 1; j > 0; --j) {
+				for (auto &b : rows[j]) {
+					b.pos.y += 1;
+				}
+			}
+			clear_count++;
+		}
+	}
+
+	std::vector<Block> out{};
+	for (int i = GRID_HEIGHT - 1; i >= 0; --i) {
+		out.insert(out.end(), rows[i].begin(), rows[i].end());
+	}
+
+	return std::make_tuple(clear_count, out);
+}
+
 int main() {
 	// init
 	SetTraceLogLevel(LOG_ALL);
@@ -302,27 +329,33 @@ int main() {
 	Tetramino tet = create_random_tet();
 
 	int game_time = 0;
+	int frames_per_fall = 60; // reduce this to increase speed and difficulty
+
 	Collision col{};
 
 	// run
 	while (!WindowShouldClose()) {
-		// update
 		std::vector<Block> total_blocks = blocks;
 		total_blocks.insert(
 			total_blocks.begin(), std::begin(tet.blocks), std::end(tet.blocks)
 		);
-
-		if (game_time % FPS_TARGET == 0) {
+		// update
+		if (game_time % frames_per_fall == 0) {
 			tet.fall();
 			game_time = 0;
+			if (col.down) {
+				int cleared;
+
+				tie(cleared, total_blocks) = clear_blocks(total_blocks);
+				if (cleared > 0) {
+					printf("Cleared %d rows!\n", cleared);
+				}
+				blocks = total_blocks;
+				tet = create_random_tet();
+			}
 		}
 
-		if (col.down) {
-			blocks = total_blocks;
-			tet = create_random_tet();
-		} else {
-			move(&tet, col);
-		}
+		move(&tet, col);
 		col = check_collision(tet.blocks, blocks);
 
 		// draw
