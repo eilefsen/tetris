@@ -1,4 +1,5 @@
-#include <algorithm>
+#include <map>
+#include <random>
 #include <vector>
 
 #include <raylib.h>
@@ -22,49 +23,195 @@ struct Block {
 // Tetramino constants use relative block coordinates
 class Tetramino {
   private:
-	Coordinate orig[4];
-	int pattern[4][4];
+	uint16_t pattern[4]; // Binary numbers each representing a 4x4 grid rotation
+	int x_offset = GRID_WIDTH / 2;
+	int y_offset = -1;
+	int pattern_idx = 0;
 
   public:
 	Block blocks[4];
 
 	void fall() {
+		y_offset += 1;
 		for (auto &b : blocks) {
 			b.pos.y += 1;
 		}
 	}
 	void left() {
+		x_offset -= 1;
 		for (auto &b : blocks) {
 			b.pos.x -= 1;
 		}
 	}
 	void right() {
+		x_offset += 1;
 		for (auto &b : blocks) {
 			b.pos.x += 1;
 		}
 	}
 
-	void rotate() {
-		for (int i = 0; i < 4; ++i) {
-			int x_offset = blocks[i].pos.x - orig[i].x;
-			int y_offset = blocks[i].pos.y - orig[i].y;
+	// `pattern` should only contain 4 ones, will otherwise return early, and log error.
+	void create_blocks(uint16_t pattern, Color color) {
+		int x = 0;
+		size_t block_counter = 0; // should never exceed 3 (max index of `blocks`)
+		printf("--- Create blocks ---\n");
 
-			// TODO: Refine rotation
-			Coordinate new_pos{.x = orig[i].y + 1, .y = -orig[i].x};
+		for (uint i = 1; i < 16; ++i) {
+			int y = i % 4;
+			printf("x: %d y: %d\n", x, y);
+			if (y == 0) {
+				++x;
+			}
 
-			blocks[i].pos.x = new_pos.x + x_offset;
-			blocks[i].pos.y = new_pos.y + y_offset;
-			orig[i].x = new_pos.x;
-			orig[i].y = new_pos.y;
+			uint16_t bit_selector = 1UL << i;
+			if (pattern & bit_selector) {
+				Coordinate pos{.x = x + x_offset, .y = y + y_offset};
+				blocks[block_counter++] = Block{.pos = pos, .color = color};
+				if (block_counter > 3) {
+					return;
+				}
+			}
 		}
 	}
 
-	Tetramino clone() const { return Tetramino(*this); }
+	void rotate() {
+		if (pattern_idx >= 3) {
+			pattern_idx = 0;
+		} else {
+			++pattern_idx;
+		}
+		printf("pattern_idx: %d", pattern_idx);
+		create_blocks(pattern[pattern_idx], blocks[0].color);
+	}
 
-	Tetramino(Color color, Coordinate positions[4])
-		: blocks{Block{positions[0], .color = color}, Block{positions[1], .color = color}, Block{positions[2], .color = color}, Block{positions[3], .color = color}},
-		  orig{positions[0], positions[1], positions[2], positions[3]} {}
+	Tetramino(Color color, uint16_t pattern[4])
+		: pattern{pattern[0], pattern[1], pattern[2], pattern[3]} {
+		create_blocks(pattern[0], color);
+	}
 };
+
+Tetramino create_i_tet() {
+	uint16_t pattern[4] = {
+		0b0000'1111'0000'0000,
+		0b0010'0010'0010'0010,
+		0b0000'0000'1111'0000,
+		0b0100'0100'0100'0100,
+	};
+	return Tetramino(SKYBLUE, pattern);
+}
+Tetramino create_t_tet() {
+	uint16_t pattern[4] = {
+		0b0000'0010'0111'0000,
+		0b0100'0110'0100'0000,
+		0b0111'0010'0000'0000,
+		0b0001'0011'0001'0000,
+	};
+	return Tetramino(PURPLE, pattern);
+}
+
+Tetramino create_j_tet() {
+	uint16_t pattern[4] = {
+		0b0011'0001'0001'0000,
+		0b0000'0111'0100'0000,
+		0b0010'0010'0011'0000,
+		0b0001'0111'0000'0000,
+	};
+	return Tetramino(BLUE, pattern);
+}
+Tetramino create_l_tet() {
+	uint16_t pattern[4] = {
+		0b0001'0001'0011'0000,
+		0b0000'0111'0001'0000,
+		0b0011'0010'0010'0000,
+		0b0100'0111'0000'0000,
+	};
+	return Tetramino(ORANGE, pattern);
+}
+Tetramino create_o_tet() {
+	uint16_t pattern[4] = {
+		0b0000'0110'0110'0000,
+		0b0000'0110'0110'0000,
+		0b0000'0110'0110'0000,
+		0b0000'0110'0110'0000,
+	};
+	return Tetramino(YELLOW, pattern);
+}
+Tetramino create_s_tet() {
+	uint16_t pattern[4] = {
+		0b0110'0011'0000'0000,
+		0b0010'0110'0100'0000,
+		// repeat
+		0b0110'0011'0000'0000,
+		0b0010'0110'0100'0000,
+	};
+	return Tetramino(RED, pattern);
+}
+Tetramino create_z_tet() {
+	uint16_t pattern[4] = {
+		0b0011'0110'0000'0000,
+		0b0100'0110'0010'0000,
+		// repeat
+		0b0011'0110'0000'0000,
+		0b0100'0110'0010'0000,
+	};
+	return Tetramino(GREEN, pattern);
+}
+static bool bag[7] = {
+	true, // 0: i
+	true, // 1: j
+	true, // 2: l
+	true, // 3: t
+	true, // 4: o
+	true, // 5: s
+	true, // 6: z
+};
+
+static std::default_random_engine generator;
+static std::uniform_int_distribution<int> distribution(0, 6);
+
+Tetramino create_random_tet() {
+
+	// NOTE: no exit condition in the for statement (continued below)
+	for (int i = 0;; ++i) {
+		if (bag[i]) {
+			break;
+		}
+		if (i > 6) {
+			for (auto &b : bag) {
+				b = true;
+			}
+			// NOTE: (cont.) Exit from within the loop instead.
+			// In this case i think it is easier to reason with.
+			break;
+		}
+	}
+
+	size_t roll = distribution(generator);
+	while (!bag[roll]) {
+		roll = distribution(generator);
+	};
+
+	bag[roll] = false;
+
+	switch (roll) {
+	case 0:
+		return create_i_tet();
+	case 1:
+		return create_j_tet();
+	case 2:
+		return create_l_tet();
+	case 3:
+		return create_t_tet();
+	case 4:
+		return create_o_tet();
+	case 5:
+		return create_s_tet();
+	case 6:
+		return create_z_tet();
+	}
+
+	return create_i_tet(); // probably not necessary
+}
 
 struct Collision {
 	bool up = false;
@@ -125,26 +272,6 @@ Collision check_collision(Block tet[4], std::vector<Block> board) {
 	return col;
 }
 
-Tetramino create_i_tet() {
-	Coordinate pos[4]{
-		{.x = 0, .y = 0},
-		{.x = 1, .y = 0},
-		{.x = 2, .y = 0},
-		{.x = 3, .y = 0},
-	};
-	return Tetramino(SKYBLUE, pos);
-}
-
-Tetramino create_t_tet() {
-	Coordinate pos[4]{
-		{.x = 0, .y = 0},
-		{.x = 1, .y = 0},
-		{.x = 2, .y = 0},
-		{.x = 1, .y = 1},
-	};
-	return Tetramino(PURPLE, pos);
-}
-
 void move(Tetramino *t, Collision c) {
 	// TODO: add key hold
 
@@ -172,7 +299,7 @@ int main() {
 	SetTargetFPS(FPS_TARGET);
 
 	std::vector<Block> blocks{};
-	Tetramino tet = create_i_tet();
+	Tetramino tet = create_random_tet();
 
 	int game_time = 0;
 	Collision col{};
@@ -190,10 +317,9 @@ int main() {
 			game_time = 0;
 		}
 
-		printf("%d%d%d\n", col.left, col.down, col.right);
 		if (col.down) {
 			blocks = total_blocks;
-			tet = create_t_tet();
+			tet = create_random_tet();
 		} else {
 			move(&tet, col);
 		}
