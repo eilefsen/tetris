@@ -3,15 +3,8 @@
 #include <cstdint>
 #include <raylib.h>
 
-struct Coordinate {
-	int x; // X coordinate in grid
-	int y; // Y coordinate in grid
-};
+#include "block.hpp"
 
-struct Block {
-	Coordinate pos;
-	Color color;
-};
 // Tetramino constants use relative block coordinates
 class Tetramino {
   private:
