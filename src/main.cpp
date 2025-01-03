@@ -319,6 +319,20 @@ std::tuple<int, std::vector<Block>> clear_blocks(std::vector<Block> blocks) {
 	return std::make_tuple(clear_count, out);
 }
 
+int calculate_score(int cleared) {
+	switch (cleared) {
+	case 1:
+		return 50;
+	case 2:
+		return 200;
+	case 3:
+		return 500;
+	case 4:
+		return 1000;
+	}
+	return 0;
+}
+
 int main() {
 	// init
 	SetTraceLogLevel(LOG_ALL);
@@ -327,6 +341,8 @@ int main() {
 
 	std::vector<Block> blocks{};
 	Tetramino tet = create_random_tet();
+
+	int score = 0;
 
 	int game_time = 0;
 	int frames_per_fall = 60; // reduce this to increase speed and difficulty
@@ -348,7 +364,8 @@ int main() {
 
 				tie(cleared, total_blocks) = clear_blocks(total_blocks);
 				if (cleared > 0) {
-					printf("Cleared %d rows!\n", cleared);
+					score += calculate_score(cleared);
+					printf("Cleared %d rows! score: %d\n", cleared, score);
 				}
 				blocks = total_blocks;
 				tet = create_random_tet();
