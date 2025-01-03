@@ -174,6 +174,7 @@ Tetramino create_random_tet() {
 			break;
 		}
 		if (i > 6) {
+			// reset bag if every bag item is false
 			for (auto &b : bag) {
 				b = true;
 			}
@@ -236,22 +237,19 @@ Collision check_collision(Block tet[4], std::vector<Block> board) {
 		}
 
 		for (const auto &b : board) {
-			if (t.x == b.pos.x) {
-				if (t.y == b.pos.y - 1) {
-					col.down = true;
-					break;
-				}
-				if (t.y == b.pos.y + 1) {
-					col.up = true;
-					break;
-				}
-			} else if (t.y == b.pos.y) {
-				if (t.x == b.pos.x - 1) {
-					col.right = true;
-				}
-				if (t.x == b.pos.x + 1) {
-					col.left = true;
-				}
+			bool xMatch = t.x == b.pos.x;
+			if (xMatch && t.y == b.pos.y - 1) {
+				col.down = true;
+			}
+			if (xMatch && t.y == b.pos.y + 1) {
+				col.up = true;
+			}
+			bool yMatch = (t.y == b.pos.y);
+			if (yMatch && t.x == b.pos.x - 1) {
+				col.right = true;
+			}
+			if (yMatch && t.x == b.pos.x + 1) {
+				col.left = true;
 			}
 		}
 	}
@@ -286,8 +284,6 @@ void move(Tetramino *t, Collision c) {
 		t->rotate();
 	}
 }
-
-void draw_blocks(std::vector<Block> blocks);
 
 // Returns a `tuple<int, vector<Block>>`, where the int is the number of lines cleared,
 // and the vector is the transformed vector of blocks
@@ -333,6 +329,14 @@ int calculate_score(int cleared) {
 	return 0;
 }
 
+void draw_blocks(std::vector<Block> blocks) {
+	for (const auto &b : blocks) {
+		float x = b.pos.x * BLOCK_SIZE;
+		float y = b.pos.y * BLOCK_SIZE;
+		DrawRectangle(x, y, BLOCK_SIZE, BLOCK_SIZE, b.color);
+	}
+}
+
 int main() {
 	// init
 	SetTraceLogLevel(LOG_ALL);
@@ -365,7 +369,7 @@ int main() {
 				tie(cleared, total_blocks) = clear_blocks(total_blocks);
 				if (cleared > 0) {
 					score += calculate_score(cleared);
-					printf("Cleared %d rows! score: %d\n", cleared, score);
+					TraceLog(LOG_INFO, "Cleared %d rows! score: %d\n", cleared, score);
 				}
 				blocks = total_blocks;
 				tet = create_random_tet();
@@ -393,12 +397,4 @@ int main() {
 	CloseWindow();
 
 	return 0;
-}
-
-void draw_blocks(std::vector<Block> blocks) {
-	for (const auto &b : blocks) {
-		float x = b.pos.x * BLOCK_SIZE;
-		float y = b.pos.y * BLOCK_SIZE;
-		DrawRectangle(x, y, BLOCK_SIZE, BLOCK_SIZE, b.color);
-	}
 }
