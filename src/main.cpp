@@ -11,6 +11,10 @@ static const int GRID_WIDTH = 10;
 static const int WINDOW_WIDTH = (GRID_WIDTH * BLOCK_SIZE);
 static const int WINDOW_HEIGHT = (GRID_HEIGHT * BLOCK_SIZE);
 
+static int game_time = 0;
+static int score = 0;
+static int frames_per_fall = 40; // reduce this to increase speed and difficulty
+
 struct Collision {
 	bool up = false;
 	bool down = false;
@@ -67,24 +71,6 @@ Collision check_collision(Block tet[4], std::vector<Block> board) {
 	return col;
 }
 
-void move(Tetramino *t, Collision c) {
-	// TODO: add key hold
-
-	if (IsKeyPressed(KEY_H) && !c.left) {
-		t->left();
-	}
-	if (IsKeyPressed(KEY_L) && !c.right) {
-		t->right();
-	}
-	if (IsKeyPressed(KEY_J) && !c.down) {
-		t->fall();
-	}
-	// TODO: Write collision logic for rotate
-	if (IsKeyPressed(KEY_R)) {
-		t->rotate();
-	}
-}
-
 // Returns a `tuple<int, vector<Block>>`, where the int is the number of lines cleared,
 // and the vector is the transformed vector of blocks
 std::tuple<int, std::vector<Block>> clear_blocks(std::vector<Block> blocks) {
@@ -137,6 +123,25 @@ void draw_blocks(std::vector<Block> blocks) {
 	}
 }
 
+void move(Tetramino *t, Collision c) {
+	// TODO: add key hold
+
+	if (IsKeyPressed(KEY_H) && !c.left) {
+		t->left();
+	}
+	if (IsKeyPressed(KEY_L) && !c.right) {
+		t->right();
+	}
+	if (IsKeyPressed(KEY_J) && !c.down) {
+		t->fall();
+	}
+	// TODO: Write collision logic for rotate
+	if (IsKeyPressed(KEY_R)) {
+		t->rotate();
+		game_time -= 8; // This gives the player more time when rotating.
+	}
+}
+
 int main() {
 	// init
 	SetTraceLogLevel(LOG_ALL);
@@ -145,11 +150,6 @@ int main() {
 
 	std::vector<Block> blocks{};
 	Tetramino tet = create_random_tet();
-
-	int score = 0;
-
-	int game_time = 0;
-	int frames_per_fall = 40; // reduce this to increase speed and difficulty
 
 	Collision col{};
 
