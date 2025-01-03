@@ -326,9 +326,9 @@ int calculate_score(int cleared) {
 	case 2:
 		return 200;
 	case 3:
-		return 500;
+		return 400;
 	case 4:
-		return 1000;
+		return 800;
 	}
 	return 0;
 }
@@ -345,7 +345,7 @@ int main() {
 	int score = 0;
 
 	int game_time = 0;
-	int frames_per_fall = 60; // reduce this to increase speed and difficulty
+	int frames_per_fall = 40; // reduce this to increase speed and difficulty
 
 	Collision col{};
 
@@ -369,6 +369,10 @@ int main() {
 				}
 				blocks = total_blocks;
 				tet = create_random_tet();
+			}
+			if (score != 0 && score % 1000 == 0) {
+				printf("score: %d, speed: %d", score, frames_per_fall);
+				frames_per_fall = std::max(5, frames_per_fall - 5);
 			}
 		}
 
