@@ -135,7 +135,8 @@ static bool bag[7] = {
 	true, // 5: s
 	true, // 6: z
 };
-static std::ranlux24 generator;
+static std::random_device rd;
+static std::ranlux24 generator(rd());
 static std::uniform_int_distribution<int> distribution(0, 6);
 
 Tetramino create_random_tet() {
