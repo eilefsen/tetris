@@ -6,7 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 include_directories(../include)
 
-add_executable(${PROJECT_NAME} main.cpp tet.cpp "block.cpp")
+add_executable(${PROJECT_NAME} main.cpp tet.cpp "block.cpp" collision.cpp)
 target_link_libraries(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/../lib/libraylib.a)
 
 if (APPLE)

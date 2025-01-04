@@ -19,17 +19,11 @@ struct Block {
 	Color color;
 };
 
-struct Collision {
-	bool up = false;
-	bool down = false;
-	bool left = false;
-	bool right = false;
-};
-
-Collision check_collision(Block tet[4], std::vector<Block> board);
-
 // Returns a `tuple<int, vector<Block>>`, where the int is the number of lines cleared,
 // and the vector is the transformed vector of blocks
 std::tuple<int, std::vector<Block>> clear_blocks(std::vector<Block> blocks);
+
+void load_block_texture();
+void unload_block_texture();
 
 void draw_blocks(std::vector<Block> blocks);
