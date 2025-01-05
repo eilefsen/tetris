@@ -5,9 +5,16 @@
 #include "raylib.h"
 #include "tet.hpp"
 
-void Tetramino::create_blocks(uint16_t pattern, Color color) {
+std::array<Block, 4> Tetramino::create_blocks(uint16_t pattern, Color color) {
 	int x = 0;
 	size_t block_counter = 0; // should never exceed 3 (max index of `blocks`)
+
+	std::array<Block, 4> new_blocks{
+		blocks[0],
+		blocks[1],
+		blocks[2],
+		blocks[3],
+	};
 
 	for (size_t i = 1; i < 16; ++i) {
 		int y = i % 4;
@@ -18,13 +25,14 @@ void Tetramino::create_blocks(uint16_t pattern, Color color) {
 		uint16_t bit_selector = 1UL << i;
 		if (pattern & bit_selector) {
 			Coordinate pos{.x = x + x_offset, .y = y + y_offset};
-			blocks[block_counter++] = Block{.pos = pos, .color = color};
+			new_blocks[block_counter++] = Block{.pos = pos, .color = color};
 			if (block_counter > 3) {
-				return;
+				return new_blocks;
 			}
 		}
 	}
-}
+	return new_blocks; // silent fail???
+};
 
 void Tetramino::fall() {
 	y_offset += 1;
@@ -45,27 +53,51 @@ void Tetramino::right() {
 	}
 }
 
-void Tetramino::rotate() {
+void Tetramino::move(int x, int y) {
+	x_offset += x;
+	y_offset += y;
+	for (auto &b : blocks) {
+		b.pos.x += x;
+		b.pos.y += y;
+	}
+}
+
+int Tetramino::rotate(int x_offset, int y_offsest) {
 	if (pattern_idx >= 3) {
 		pattern_idx = 0;
 	} else {
 		++pattern_idx;
 	}
 	TraceLog(LOG_DEBUG, "pattern_idx: %d", pattern_idx);
-	create_blocks(pattern[pattern_idx], blocks[0].color);
+	x_offset += x_offset;
+	y_offset += x_offset;
+	blocks = create_blocks(pattern[pattern_idx], blocks[0].color);
+	return pattern_idx;
+}
+int Tetramino::rotate_cw(int x_offset, int y_offsest) {
+	if (pattern_idx <= 0) {
+		pattern_idx = 3;
+	} else {
+		--pattern_idx;
+	}
+	TraceLog(LOG_DEBUG, "pattern_idx: %d", pattern_idx);
+	x_offset += x_offset;
+	y_offset += x_offset;
+	blocks = create_blocks(pattern[pattern_idx], blocks[0].color);
+	return pattern_idx;
 }
 
 Tetramino::Tetramino(Color color, uint16_t pattern[4])
 	: pattern{pattern[0], pattern[1], pattern[2], pattern[3]} {
-	create_blocks(pattern[0], color);
+	blocks = create_blocks(pattern[0], color);
 };
 
 Tetramino create_i_tet() {
 	uint16_t pattern[4] = {
+		0b0010'0010'0010'0010,
 		0b0000'1111'0000'0000,
 		0b0010'0010'0010'0010,
-		0b0000'0000'1111'0000,
-		0b0100'0100'0100'0100,
+		0b0000'1111'0000'0000,
 	};
 	return Tetramino(SKYBLUE, pattern);
 }
@@ -81,10 +113,10 @@ Tetramino create_t_tet() {
 
 Tetramino create_j_tet() {
 	uint16_t pattern[4] = {
-		0b0011'0001'0001'0000,
-		0b0000'0111'0100'0000,
 		0b0010'0010'0011'0000,
 		0b0001'0111'0000'0000,
+		0b0011'0001'0001'0000,
+		0b0000'0111'0100'0000,
 	};
 	return Tetramino(BLUE, pattern);
 }
@@ -108,21 +140,20 @@ Tetramino create_o_tet() {
 }
 Tetramino create_s_tet() {
 	uint16_t pattern[4] = {
-		0b0110'0011'0000'0000,
+		0b0001'0011'0010'0000,
+		0b0000'0110'0011'0000,
 		0b0010'0110'0100'0000,
-		// repeat
 		0b0110'0011'0000'0000,
-		0b0010'0110'0100'0000,
 	};
 	return Tetramino(RED, pattern);
 }
 Tetramino create_z_tet() {
 	uint16_t pattern[4] = {
-		0b0011'0110'0000'0000,
-		0b0100'0110'0010'0000,
+		0b0010'0011'0001'0000,
+		0b0000'0011'0110'0000,
 		// repeat
-		0b0011'0110'0000'0000,
 		0b0100'0110'0010'0000,
+		0b0011'0110'0000'0000,
 	};
 	return Tetramino(GREEN, pattern);
 }

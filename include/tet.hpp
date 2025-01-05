@@ -12,17 +12,19 @@ class Tetramino {
 	int x_offset = 3;
 	int y_offset = -1;
 	int pattern_idx = 0;
-	// `pattern` should only contain 4 ones, will otherwise return early, and log error.
-	void create_blocks(uint16_t pattern, Color color);
 
   public:
-	Block blocks[4];
+	std::array<Block, 4> blocks;
+	// `pattern` should only contain 4 ones, will otherwise return early, and log error.
+	std::array<Block, 4> create_blocks(uint16_t pattern, Color color);
+
+	void move(int y, int x);
 
 	void fall();
 	void left();
 	void right();
-
-	void rotate();
+	int rotate(int x_offset, int y_offsest);
+	int rotate_cw(int x_offset, int y_offsest);
 
 	Tetramino(Color color, uint16_t pattern[4]);
 };

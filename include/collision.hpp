@@ -3,11 +3,20 @@
 #include "block.hpp"
 #include "tet.hpp"
 
-struct Collision {
+struct CollisionBase {
 	bool up = false;
 	bool down = false;
 	bool left = false;
 	bool right = false;
 };
 
-Collision check_collision(Block tet[4], std::vector<Block> board);
+struct Collision {
+	CollisionBase base;
+	CollisionBase rotated;
+};
+
+CollisionBase check_collision(std::array<Block, 4> blocks, std::vector<Block> board);
+
+CollisionBase check_obstruction(std::array<Block, 4> blocks, std::vector<Block> board);
+
+Collision check_all_collisions(Tetramino tet, std::vector<Block> board);

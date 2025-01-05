@@ -42,7 +42,6 @@ void draw_blocks(std::vector<Block> blocks) {
 	for (const auto &b : blocks) {
 		float x = b.pos.x * BLOCK_SIZE;
 		float y = b.pos.y * BLOCK_SIZE;
-		// DrawRectangle(x, y, BLOCK_SIZE, BLOCK_SIZE, b.color);
 		DrawTexture(block_texture, x, y, b.color);
 	}
 }

@@ -29,23 +29,73 @@ int calculate_score(int cleared) {
 	return 0;
 }
 
-void move(Tetramino *t, Collision c) {
+void move(Tetramino *t, Collision c, std::vector<Block> blocks) {
 	// TODO: add key hold
-
-	if (IsKeyPressed(KEY_H) && !c.left) {
+	if (IsKeyPressed(KEY_H) && !c.base.left) {
 		t->left();
 	}
-	if (IsKeyPressed(KEY_L) && !c.right) {
+	if (IsKeyPressed(KEY_L) && !c.base.right) {
 		t->right();
 	}
-	if (IsKeyPressed(KEY_J) && !c.down) {
+	if (IsKeyPressed(KEY_J) && !c.base.down) {
 		t->fall();
 	}
 	// TODO: Write collision logic for rotate
 	if (IsKeyPressed(KEY_R)) {
-		t->rotate();
-		game_time -= 8; // This gives the player more time when rotating.
+		auto old_blocks = t->blocks;
+		int r_idx = t->rotate(0, 0);
+		CollisionBase obs = check_obstruction(t->blocks, blocks);
+		int i = 0;
+
+		std::array<std::array<Coordinate, 5>, 4> jlstz_tests{{
+			{
+				Coordinate{.x = 0, .y = 0},
+				Coordinate{.x = 1, .y = 0},
+				Coordinate{.x = 0, .y = -1},
+				Coordinate{.x = -1, .y = 3},
+				Coordinate{.x = 1, .y = 0},
+			},
+			{
+				Coordinate{.x = 0, .y = 0},
+				Coordinate{.x = -1, .y = 0},
+				Coordinate{.x = 0, .y = 1},
+				Coordinate{.x = 1, .y = -3},
+				Coordinate{.x = -1, .y = 0},
+
+			},
+			{
+				Coordinate{.x = 0, .y = 0},
+				Coordinate{.x = -1, .y = 0},
+				Coordinate{.x = 0, .y = -1},
+				Coordinate{.x = 1, .y = 3},
+				Coordinate{.x = -1, .y = 0},
+
+			},
+			{
+				Coordinate{.x = 0, .y = 0},
+				Coordinate{.x = 1, .y = 0},
+				Coordinate{.x = 0, .y = 1},
+				Coordinate{.x = -1, .y = -3},
+				Coordinate{.x = 1, .y = 0},
+
+			},
+		}};
+
+		while (obs.down || obs.left || obs.right || obs.up) {
+			auto test = jlstz_tests[r_idx][i];
+			t->move(test.x, test.y);
+
+			if (i >= 4) {
+				t->rotate_cw(0, 0); // reset rotation index
+				t->blocks = old_blocks;
+				break;
+			}
+			obs = check_obstruction(t->blocks, blocks);
+			++i;
+		}
 	}
+
+	game_time -= 8; // This gives the player more time when rotating.
 }
 
 int main() {
@@ -72,18 +122,18 @@ int main() {
 
 		// update
 
-		col = check_collision(tet.blocks, blocks);
-		move(&tet, col);
-		col = check_collision(tet.blocks, blocks);
+		col = check_all_collisions(tet, blocks);
+		move(&tet, col, blocks);
+		col = check_all_collisions(tet, blocks);
 
 		if (game_time != 0 && game_time % frames_per_fall == 0) {
 			++cycle_count;
 			TraceLog(LOG_INFO, "cycle: %d\n", cycle_count);
-			if (!col.down) {
+			if (!col.base.down) {
 				tet.fall();
 			}
 			game_time = 0;
-			if (col.down) {
+			if (col.base.down) {
 				if (!place_flag) {
 					place_flag = true;
 				} else {
