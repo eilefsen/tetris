@@ -112,6 +112,7 @@ void move(Tetramino *t, Collision c, std::vector<Block> blocks) {
 
 	game_time -= 8; // This gives the player more time when rotating.
 }
+static bool exit_window = false;
 
 void game() {
 	uint64_t cycle_count = 0;
@@ -120,7 +121,7 @@ void game() {
 	Collision col{};
 
 	// game loop
-	while (!WindowShouldClose()) {
+	while (!(exit_window = WindowShouldClose())) {
 		std::vector<Block> total_blocks = blocks;
 		total_blocks.insert(
 			total_blocks.begin(), std::begin(tet.blocks), std::end(tet.blocks)
@@ -146,12 +147,15 @@ void game() {
 					score += calculate_score(cleared);
 					TraceLog(LOG_INFO, "Cleared %d rows! score: %d\n", cleared, score);
 				}
+				// fail if placed tet is above 0
+				for (size_t i = 0; i < 4; ++i) {
+					if (tet.blocks[i].pos.y < 0) {
+						return;
+					}
+				}
+
 				blocks = total_blocks;
 				tet = create_random_tet();
-				auto obs = check_obstruction(tet.blocks, blocks);
-				if (obs.down || obs.up || obs.left || obs.right) {
-					return;
-				}
 
 				if (score / 1000UL * difficulty > 0) {
 					TraceLog(LOG_INFO, "score: %d, speed: %d", score, frames_per_fall);
@@ -180,7 +184,7 @@ void game() {
 		DrawText(
 			&std::format("score:\n{}", score)[0],
 			WINDOW_WIDTH_MARGIN_START + 5,
-			WINDOW_HEIGHT_MARGIN_START,
+			WINDOW_HEIGHT_MARGIN_START + 24,
 			16,
 			WHITE
 		);
@@ -200,16 +204,28 @@ int main() {
 
 	game();
 
-	while (!WindowShouldClose()) {
+	while (!(exit_window = WindowShouldClose())) {
 		if (IsKeyPressed(KEY_R)) {
 			game();
 		}
 		BeginDrawing();
+
+		int text_x = (WINDOW_WIDTH / 2) - (24 * 3);
+		int text_y = (WINDOW_HEIGHT / 2) - 24;
+		DrawRectangleRec(
+			Rectangle{
+				.x = static_cast<float>(text_x - 12),
+				.y = static_cast<float>(text_y - 12),
+				.width = (24 * 5) + 12,
+				.height = 24 * 5
+			},
+			ColorAlpha(DARKGRAY, 0.4F)
+		);
 		DrawText(
-			&std::format("You lose. Score:\n{}", score)[0],
-			WINDOW_WIDTH / 2,
-			WINDOW_HEIGHT / 2,
-			16,
+			&std::format("You lose.\n\n Score:\n  {}", score)[0],
+			text_x,
+			text_y,
+			24,
 			WHITE
 		);
 		EndDrawing();
