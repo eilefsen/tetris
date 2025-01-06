@@ -12,6 +12,39 @@ class Tetramino {
 	int x_offset = 3;
 	int y_offset = -2;
 	size_t pattern_idx = 0;
+	std::array<std::array<Coordinate, 5>, 4> rotation_tests{{
+		{
+			Coordinate{.x = 0, .y = 0},
+			Coordinate{.x = 1, .y = 0},
+			Coordinate{.x = 0, .y = -1},
+			Coordinate{.x = -1, .y = 3},
+			Coordinate{.x = 1, .y = 0},
+		},
+		{
+			Coordinate{.x = 0, .y = 0},
+			Coordinate{.x = -1, .y = 0},
+			Coordinate{.x = 0, .y = 1},
+			Coordinate{.x = 1, .y = -3},
+			Coordinate{.x = -1, .y = 0},
+
+		},
+		{
+			Coordinate{.x = 0, .y = 0},
+			Coordinate{.x = -1, .y = 0},
+			Coordinate{.x = 0, .y = -1},
+			Coordinate{.x = 1, .y = 3},
+			Coordinate{.x = -1, .y = 0},
+
+		},
+		{
+			Coordinate{.x = 0, .y = 0},
+			Coordinate{.x = 1, .y = 0},
+			Coordinate{.x = 0, .y = 1},
+			Coordinate{.x = -1, .y = -3},
+			Coordinate{.x = 1, .y = 0},
+
+		},
+	}};
 
   public:
 	std::array<Block, 4> blocks;
@@ -23,10 +56,13 @@ class Tetramino {
 	void fall();
 	void left();
 	void right();
-	size_t rotate(int x_offset, int y_offset);
-	size_t rotate_cw(int x_offset, int y_offset);
+	size_t rotate(std::vector<Block> board);
 
 	Tetramino(Color color, uint16_t pattern[4]);
+	Tetramino(
+		Color color, uint16_t pattern[4],
+		std::array<std::array<Coordinate, 5>, 4> rotation_tests
+	);
 };
 
 Tetramino create_i_tet();

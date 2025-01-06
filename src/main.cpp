@@ -44,7 +44,7 @@ uint calculate_score(int cleared) {
 	return 0;
 }
 
-void move(Tetramino *t, Collision c, std::vector<Block> blocks) {
+void move(Tetramino *t, Collision c, std::vector<Block> board) {
 	// TODO: add key hold
 	if (IsKeyPressed(KEY_H) && !c.base.left) {
 		t->left();
@@ -57,60 +57,8 @@ void move(Tetramino *t, Collision c, std::vector<Block> blocks) {
 	}
 	// TODO: Write collision logic for rotate
 	if (IsKeyPressed(KEY_R)) {
-		auto old_blocks = t->blocks;
-		size_t r_idx = t->rotate(0, 0);
-		CollisionBase obs = check_obstruction(t->blocks, blocks);
-		size_t i = 0;
-
-		std::array<std::array<Coordinate, 5>, 4> jlstz_tests{{
-			{
-				Coordinate{.x = 0, .y = 0},
-				Coordinate{.x = 1, .y = 0},
-				Coordinate{.x = 0, .y = -1},
-				Coordinate{.x = -1, .y = 3},
-				Coordinate{.x = 1, .y = 0},
-			},
-			{
-				Coordinate{.x = 0, .y = 0},
-				Coordinate{.x = -1, .y = 0},
-				Coordinate{.x = 0, .y = 1},
-				Coordinate{.x = 1, .y = -3},
-				Coordinate{.x = -1, .y = 0},
-
-			},
-			{
-				Coordinate{.x = 0, .y = 0},
-				Coordinate{.x = -1, .y = 0},
-				Coordinate{.x = 0, .y = -1},
-				Coordinate{.x = 1, .y = 3},
-				Coordinate{.x = -1, .y = 0},
-
-			},
-			{
-				Coordinate{.x = 0, .y = 0},
-				Coordinate{.x = 1, .y = 0},
-				Coordinate{.x = 0, .y = 1},
-				Coordinate{.x = -1, .y = -3},
-				Coordinate{.x = 1, .y = 0},
-
-			},
-		}};
-
-		while (obs.down || obs.left || obs.right || obs.up) {
-			auto test = jlstz_tests[r_idx][i];
-			t->move(test.x, test.y);
-
-			if (i >= 4) {
-				t->rotate_cw(0, 0); // reset rotation index
-				t->blocks = old_blocks;
-				break;
-			}
-			obs = check_obstruction(t->blocks, blocks);
-			++i;
-		}
+		t->rotate(board);
 	}
-
-	game_time -= 8; // This gives the player more time when rotating.
 }
 static bool exit_window = false;
 

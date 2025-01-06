@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <random>
 
+#include "collision.hpp"
 #include "raylib.h"
 #include "tet.hpp"
 
@@ -64,33 +65,46 @@ void Tetramino::move(int x, int y) {
 	}
 }
 
-size_t Tetramino::rotate(int x, int y) {
+size_t Tetramino::rotate(std::vector<Block> board) {
+	auto old_idx = pattern_idx;
 	if (pattern_idx >= 3) {
 		pattern_idx = 0;
 	} else {
 		++pattern_idx;
 	}
 	TraceLog(LOG_DEBUG, "pattern_idx: %d", pattern_idx);
-	x_offset += x;
-	y_offset += y;
-	blocks = create_blocks(pattern[pattern_idx], blocks[0].color);
-	return pattern_idx;
-}
-size_t Tetramino::rotate_cw(int x, int y) {
-	if (pattern_idx <= 0) {
-		pattern_idx = 3;
-	} else {
-		--pattern_idx;
+
+	auto old_blocks = blocks;
+
+	CollisionBase obs = check_obstruction(blocks, board);
+	size_t i = 0;
+
+	while (obs.down || obs.left || obs.right || obs.up) {
+		auto test = rotation_tests[pattern_idx][i];
+		move(test.x, test.y);
+
+		if (i >= 4) {
+			pattern_idx = old_idx;
+			break;
+		}
+		obs = check_obstruction(blocks, board);
+		++i;
 	}
-	TraceLog(LOG_DEBUG, "pattern_idx: %d", pattern_idx);
-	x_offset += x;
-	y_offset += y;
+
 	blocks = create_blocks(pattern[pattern_idx], blocks[0].color);
 	return pattern_idx;
 }
 
 Tetramino::Tetramino(Color color, uint16_t pattern[4])
 	: pattern{pattern[0], pattern[1], pattern[2], pattern[3]} {
+	blocks = create_blocks(pattern[0], color);
+};
+Tetramino::Tetramino(
+	Color color, uint16_t pattern[4],
+	std::array<std::array<Coordinate, 5>, 4> rotation_tests
+)
+	: pattern{pattern[0], pattern[1], pattern[2], pattern[3]},
+	  rotation_tests{rotation_tests} {
 	blocks = create_blocks(pattern[0], color);
 };
 
