@@ -17,7 +17,7 @@ CollisionBase check_collision(std::array<Block, 4> blocks, std::vector<Block> bo
 	int rightest_x = 0;
 	int leftest_x = GRID_HEIGHT - 1;
 
-	for (int i = 0; i < 4; ++i) {
+	for (size_t i = 0; i < 4; ++i) {
 		Coordinate t = blocks[i].pos;
 
 		if (t.y > lowest_y) {
@@ -67,7 +67,7 @@ CollisionBase check_obstruction(std::array<Block, 4> blocks, std::vector<Block> 
 	int rightest_x = 0;
 	int leftest_x = GRID_HEIGHT - 1;
 
-	for (int i = 0; i < 4; ++i) {
+	for (size_t i = 0; i < 4; ++i) {
 		Coordinate t = blocks[i].pos;
 
 		if (t.y > lowest_y) {

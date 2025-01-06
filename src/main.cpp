@@ -11,11 +11,11 @@ const int WINDOW_WIDTH = (GRID_WIDTH * BLOCK_SIZE);
 const int WINDOW_HEIGHT = (GRID_HEIGHT * BLOCK_SIZE);
 
 static int game_time = 0;
-static int score = 0;
+static uint score = 0;
 static int frames_per_fall = 40; // reduce this to increase speed and difficulty
-static int difficulty = 0;		 // reduce this to increase speed and difficulty
+static uint difficulty = 0;		 // reduce this to increase speed and difficulty
 
-int calculate_score(int cleared) {
+uint calculate_score(int cleared) {
 	switch (cleared) {
 	case 1:
 		return 50;
@@ -43,9 +43,9 @@ void move(Tetramino *t, Collision c, std::vector<Block> blocks) {
 	// TODO: Write collision logic for rotate
 	if (IsKeyPressed(KEY_R)) {
 		auto old_blocks = t->blocks;
-		int r_idx = t->rotate(0, 0);
+		size_t r_idx = t->rotate(0, 0);
 		CollisionBase obs = check_obstruction(t->blocks, blocks);
-		int i = 0;
+		size_t i = 0;
 
 		std::array<std::array<Coordinate, 5>, 4> jlstz_tests{{
 			{

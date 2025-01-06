@@ -40,8 +40,8 @@ void unload_block_texture() { UnloadTexture(block_texture); }
 
 void draw_blocks(std::vector<Block> blocks) {
 	for (const auto &b : blocks) {
-		float x = b.pos.x * BLOCK_SIZE;
-		float y = b.pos.y * BLOCK_SIZE;
+		int x = b.pos.x * BLOCK_SIZE;
+		int y = b.pos.y * BLOCK_SIZE;
 		DrawTexture(block_texture, x, y, b.color);
 	}
 }

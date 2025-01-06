@@ -5,6 +5,8 @@
 #include "raylib.h"
 #include "tet.hpp"
 
+#define BITSEL(i) 1 << i
+
 std::array<Block, 4> Tetramino::create_blocks(uint16_t pattern, Color color) {
 	int x = 0;
 	size_t block_counter = 0; // should never exceed 3 (max index of `blocks`)
@@ -22,8 +24,7 @@ std::array<Block, 4> Tetramino::create_blocks(uint16_t pattern, Color color) {
 			++x;
 		}
 
-		uint16_t bit_selector = 1UL << i;
-		if (pattern & bit_selector) {
+		if (pattern & BITSEL(i)) {
 			Coordinate pos{.x = x + x_offset, .y = y + y_offset};
 			new_blocks[block_counter++] = Block{.pos = pos, .color = color};
 			if (block_counter > 3) {
@@ -62,7 +63,7 @@ void Tetramino::move(int x, int y) {
 	}
 }
 
-int Tetramino::rotate(int x_offset, int y_offsest) {
+size_t Tetramino::rotate(int x_offset, int y_offset) {
 	if (pattern_idx >= 3) {
 		pattern_idx = 0;
 	} else {
@@ -70,11 +71,11 @@ int Tetramino::rotate(int x_offset, int y_offsest) {
 	}
 	TraceLog(LOG_DEBUG, "pattern_idx: %d", pattern_idx);
 	x_offset += x_offset;
-	y_offset += x_offset;
+	y_offset += y_offset;
 	blocks = create_blocks(pattern[pattern_idx], blocks[0].color);
 	return pattern_idx;
 }
-int Tetramino::rotate_cw(int x_offset, int y_offsest) {
+size_t Tetramino::rotate_cw(int x_offset, int y_offset) {
 	if (pattern_idx <= 0) {
 		pattern_idx = 3;
 	} else {
@@ -82,7 +83,7 @@ int Tetramino::rotate_cw(int x_offset, int y_offsest) {
 	}
 	TraceLog(LOG_DEBUG, "pattern_idx: %d", pattern_idx);
 	x_offset += x_offset;
-	y_offset += x_offset;
+	y_offset += y_offset;
 	blocks = create_blocks(pattern[pattern_idx], blocks[0].color);
 	return pattern_idx;
 }
@@ -168,7 +169,7 @@ static bool bag[7] = {
 };
 static std::random_device rd;
 static std::ranlux24 generator(rd());
-static std::uniform_int_distribution<int> distribution(0, 6);
+static std::uniform_int_distribution<size_t> distribution(0, 6);
 
 Tetramino create_random_tet() {
 

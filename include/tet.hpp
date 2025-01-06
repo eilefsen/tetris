@@ -11,7 +11,7 @@ class Tetramino {
 	uint16_t pattern[4]; // Binary numbers each representing a 4x4 grid rotation
 	int x_offset = 3;
 	int y_offset = -1;
-	int pattern_idx = 0;
+	size_t pattern_idx = 0;
 
   public:
 	std::array<Block, 4> blocks;
@@ -23,8 +23,8 @@ class Tetramino {
 	void fall();
 	void left();
 	void right();
-	int rotate(int x_offset, int y_offsest);
-	int rotate_cw(int x_offset, int y_offsest);
+	size_t rotate(int x_offset, int y_offset);
+	size_t rotate_cw(int x_offset, int y_offset);
 
 	Tetramino(Color color, uint16_t pattern[4]);
 };

@@ -5,7 +5,7 @@
 
 #include "raylib.h"
 
-const float BLOCK_SIZE = 32.0;
+const int BLOCK_SIZE = 32.0;
 const int GRID_HEIGHT = 16;
 const int GRID_WIDTH = 10;
 
