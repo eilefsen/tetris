@@ -6,28 +6,32 @@
 #include "raylib.h"
 #include "tet.hpp"
 
+using std::array;
+
 #define BIT_POSITION(i) 1 << i
 
 // argument `ptn` corresponds to a single pattern (see `Tetramino`)
-std::array<Block, 4> Tetramino::create_blocks(uint16_t ptn, Color color) {
-	int x = 0;
+array<Block, 4> Tetramino::create_blocks(Pattern ptn, Color color) {
+	size_t x = 0;
 	size_t block_counter = 0; // should never exceed 3 (max index of `blocks`)
 
-	std::array<Block, 4> new_blocks{
+	array<Block, 4> new_blocks{
 		blocks[0],
 		blocks[1],
 		blocks[2],
 		blocks[3],
 	};
 
-	for (size_t i = 1; i < 16; ++i) {
-		int y = i % 4;
+	for (size_t i = 1; i < 25; ++i) {
+		size_t y = i % 5;
 		if (y == 0) {
 			++x;
 		}
 
-		if (ptn & BIT_POSITION(i)) {
-			Coordinate pos{.x = x + x_offset, .y = y + y_offset};
+		if (ptn[y][x]) {
+			Coordinate pos{
+				.x = static_cast<int>(x) + x_offset, .y = static_cast<int>(y) + y_offset
+			};
 			new_blocks[block_counter++] = Block{.pos = pos, .color = color};
 			if (block_counter > 3) {
 				return new_blocks;
@@ -65,112 +69,315 @@ void Tetramino::move(int x, int y) {
 	}
 }
 
-size_t Tetramino::rotate(std::vector<Block> board) {
-	auto old_idx = pattern_idx;
-	if (pattern_idx >= 3) {
-		pattern_idx = 0;
-	} else {
-		++pattern_idx;
-	}
-	TraceLog(LOG_DEBUG, "pattern_idx: %d", pattern_idx);
-
+size_t Tetramino::rotate_internal(
+	vector<Block> board, array<Coordinate, 5> o1, array<Coordinate, 5> o2, size_t new_idx
+) {
+	TraceLog(LOG_DEBUG, "new_idx: %d", new_idx);
 	auto old_blocks = blocks;
-
+	size_t old_idx = pattern_idx;
+	pattern_idx = new_idx;
+	blocks = create_blocks(pattern[pattern_idx], blocks[0].color);
 	CollisionBase obs = check_obstruction(blocks, board);
-	size_t i = 0;
 
+	size_t i = 0;
 	while (obs.down || obs.left || obs.right || obs.up) {
-		auto test = rotation_tests[pattern_idx][i];
+		// FIXME: sometimes this latches and makes a piece impossible to rotate
+		Coordinate test = {.x = o2[i].x - o1[i].x, .y = o2[i].y - o1[i].y};
 		move(test.x, test.y);
 
 		if (i >= 4) {
+			blocks = old_blocks;
 			pattern_idx = old_idx;
-			break;
+			return pattern_idx;
 		}
+
+		blocks = create_blocks(pattern[pattern_idx], blocks[0].color);
 		obs = check_obstruction(blocks, board);
 		++i;
 	}
 
-	blocks = create_blocks(pattern[pattern_idx], blocks[0].color);
+	TraceLog(LOG_DEBUG, "pattern_idx: %d", pattern_idx);
 	return pattern_idx;
 }
+size_t Tetramino::rotate_cw(vector<Block> board) {
+	size_t new_idx = pattern_idx >= 3 ? 0 : pattern_idx + 1;
 
-Tetramino::Tetramino(Color color, uint16_t pattern[4])
+	auto o2 = rotation_offsets.get_rotation_offset(new_idx);
+	auto o1 = rotation_offsets.get_rotation_offset(new_idx >= 3 ? 0 : new_idx + 1);
+
+	return rotate_internal(board, o1, o2, new_idx);
+}
+size_t Tetramino::rotate_ccw(vector<Block> board) {
+	size_t new_idx = pattern_idx <= 0 ? 3 : pattern_idx - 1;
+
+	// flipped from ccw method
+	auto o1 = rotation_offsets.get_rotation_offset(new_idx);
+	auto o2 = rotation_offsets.get_rotation_offset(new_idx <= 0 ? 3 : new_idx - 1);
+
+	return rotate_internal(board, o1, o2, new_idx);
+}
+
+Tetramino::Tetramino(Color color, array<Pattern, 4> pattern)
 	: pattern{pattern[0], pattern[1], pattern[2], pattern[3]} {
 	blocks = create_blocks(pattern[0], color);
 };
 Tetramino::Tetramino(
-	Color color, uint16_t pattern[4],
-	std::array<std::array<Coordinate, 5>, 4> rotation_tests
+	Color color, array<Pattern, 4> pattern, RotationOffsets rotation_offsets
 )
 	: pattern{pattern[0], pattern[1], pattern[2], pattern[3]},
-	  rotation_tests{rotation_tests} {
+	  rotation_offsets{rotation_offsets} {
 	blocks = create_blocks(pattern[0], color);
 };
 
 Tetramino create_i_tet() {
-	uint16_t pattern[4] = {
-		0b0010'0010'0010'0010,
-		0b0000'1111'0000'0000,
-		0b0010'0010'0010'0010,
-		0b0000'1111'0000'0000,
+	array<Pattern, 4> pattern = {{
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 1, 1, 1, 1}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{1, 1, 1, 1, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+	}};
+	// clang-format off
+	RotationOffsets offsets {
+		.ZERO =  {{{0, 0},  {-1, 0}, {2, 0},  {-1, 0}, {2, 0}}},
+		.RIGHT = {{{-1, 0}, {0, 0},  {0, 0},  {0, 1},  {0, -2}}},
+		.TWO =   {{{-1, 1}, {1, 1},  {-2, 1}, {1, 0},  {-2, 0}}},
+		.LEFT =  {{{0, 1},  {0, 1},  {0, 1},  {0, -1}, {0, 2}}},
 	};
-	return Tetramino(SKYBLUE, pattern);
+	// clang-format on
+
+	return Tetramino(SKYBLUE, pattern, offsets);
 }
 Tetramino create_t_tet() {
-	uint16_t pattern[4] = {
-		0b0000'0010'0111'0000,
-		0b0100'0110'0100'0000,
-		0b0111'0010'0000'0000,
-		0b0001'0011'0001'0000,
-	};
+	array<Pattern, 4> pattern = {{
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 1, 1, 1, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 1, 1, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 1, 1, 1, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 1, 1, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+	}};
 	return Tetramino(PURPLE, pattern);
 }
 
 Tetramino create_j_tet() {
-	uint16_t pattern[4] = {
-		0b0010'0010'0011'0000,
-		0b0001'0111'0000'0000,
-		0b0011'0001'0001'0000,
-		0b0000'0111'0100'0000,
-	};
+	array<Pattern, 4> pattern = {{
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 1, 0, 0, 0}},
+			{{0, 1, 1, 1, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 1, 1, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 1, 1, 1, 0}},
+			{{0, 0, 0, 1, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 1, 1, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+	}};
 	return Tetramino(BLUE, pattern);
 }
 Tetramino create_l_tet() {
-	uint16_t pattern[4] = {
-		0b0001'0001'0011'0000,
-		0b0000'0111'0001'0000,
-		0b0011'0010'0010'0000,
-		0b0100'0111'0000'0000,
-	};
+	array<Pattern, 4> pattern = {{
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 1, 0}},
+			{{0, 1, 1, 1, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 1, 1, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 1, 1, 1, 0}},
+			{{0, 1, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 1, 1, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+	}};
 	return Tetramino(ORANGE, pattern);
 }
 Tetramino create_o_tet() {
-	uint16_t pattern[4] = {
-		0b0000'0011'0011'0000,
-		0b0000'0011'0011'0000,
-		0b0000'0011'0011'0000,
-		0b0000'0011'0011'0000,
+	array<Pattern, 4> pattern = {{
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 1, 1, 0}},
+			{{0, 0, 1, 1, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 1, 1, 0}},
+			{{0, 0, 1, 1, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 1, 1, 0, 0}},
+			{{0, 1, 1, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 1, 1, 0, 0}},
+			{{0, 1, 1, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+	}};
+
+	// clang-format off
+	RotationOffsets offsets{
+		.ZERO =  {{{0, 0},   {0, 0},   {0, 0},   {0, 0},   {0, 0}}},
+		.RIGHT = {{{0, -1},  {0, -1},  {0, -1},  {0, -1},  {0, -1}}},
+		.TWO =   {{{-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}, {-1, -1}}},
+		.LEFT =  {{{-1, 0},  {-1, 0},  {-1, 0},  {-1, 0},  {-1, 0}}},
 	};
-	return Tetramino(YELLOW, pattern);
+	// clang-format on
+
+	return Tetramino(YELLOW, pattern, offsets);
 }
 Tetramino create_s_tet() {
-	uint16_t pattern[4] = {
-		0b0001'0011'0010'0000,
-		0b0000'0110'0011'0000,
-		0b0010'0110'0100'0000,
-		0b0110'0011'0000'0000,
-	};
+	array<Pattern, 4> pattern = {{
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 1, 1, 0}},
+			{{0, 1, 1, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 1, 1, 0}},
+			{{0, 0, 0, 1, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 1, 1, 0}},
+			{{0, 1, 1, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 1, 0, 0, 0}},
+			{{0, 1, 1, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+	}};
 	return Tetramino(RED, pattern);
 }
 Tetramino create_z_tet() {
-	uint16_t pattern[4] = {
-		0b0010'0011'0001'0000,
-		0b0000'0011'0110'0000,
-		// repeat
-		0b0100'0110'0010'0000,
-		0b0011'0110'0000'0000,
-	};
+	array<Pattern, 4> pattern = {{
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 1, 1, 0, 0}},
+			{{0, 0, 1, 1, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 1, 0}},
+			{{0, 0, 1, 1, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+			{{0, 1, 1, 0, 0}},
+			{{0, 0, 1, 1, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+		{{
+			{{0, 0, 0, 0, 0}},
+			{{0, 0, 1, 0, 0}},
+			{{0, 1, 1, 0, 0}},
+			{{0, 1, 0, 0, 0}},
+			{{0, 0, 0, 0, 0}},
+		}},
+	}};
 	return Tetramino(GREEN, pattern);
 }
 static bool bag[7] = {

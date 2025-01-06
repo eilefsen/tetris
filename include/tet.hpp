@@ -5,64 +5,61 @@
 
 #include "block.hpp"
 
+using std::array, std::vector;
+
+struct RotationOffsets {
+	// clang-format off
+	array<Coordinate,5> ZERO =  {{{0, 0}, {0, 0},  {0, 0},   {0, 0},  {0, 0}}};
+	array<Coordinate,5> RIGHT = {{{0, 0}, {1, 0},  {1, -1},  {0, 2},  {1, 2}}};
+	array<Coordinate,5> TWO =   {{{0, 0}, {0, 0},  {0, 0},   {0, 0},  {0, 0}}};
+	array<Coordinate,5> LEFT =  {{{0, 0}, {-1, 0}, {-1, -1}, {0, 2},  {-1, 2}}};
+	// clang-format on
+	array<Coordinate, 5> get_rotation_offset(size_t i) {
+		switch (i) {
+		case 0:
+			return ZERO;
+		case 1:
+			return LEFT;
+		case 2:
+			return TWO;
+		case 3:
+			return RIGHT;
+		};
+		return ZERO;
+	}
+};
+
+typedef array<array<bool, 5>, 5> Pattern;
+
 // Tetramino constants use relative block coordinates
 class Tetramino {
   private:
-	uint16_t pattern[4]; // Binary numbers each representing a 4x4 grid rotation
+	array<Pattern, 4> pattern;
 	int x_offset = 3;
 	int y_offset = -2;
 	size_t pattern_idx = 0;
-	std::array<std::array<Coordinate, 5>, 4> rotation_tests{{
-		{
-			Coordinate{.x = 0, .y = 0},
-			Coordinate{.x = 1, .y = 0},
-			Coordinate{.x = 0, .y = -1},
-			Coordinate{.x = -1, .y = 3},
-			Coordinate{.x = 1, .y = 0},
-		},
-		{
-			Coordinate{.x = 0, .y = 0},
-			Coordinate{.x = -1, .y = 0},
-			Coordinate{.x = 0, .y = 1},
-			Coordinate{.x = 1, .y = -3},
-			Coordinate{.x = -1, .y = 0},
-
-		},
-		{
-			Coordinate{.x = 0, .y = 0},
-			Coordinate{.x = -1, .y = 0},
-			Coordinate{.x = 0, .y = -1},
-			Coordinate{.x = 1, .y = 3},
-			Coordinate{.x = -1, .y = 0},
-
-		},
-		{
-			Coordinate{.x = 0, .y = 0},
-			Coordinate{.x = 1, .y = 0},
-			Coordinate{.x = 0, .y = 1},
-			Coordinate{.x = -1, .y = -3},
-			Coordinate{.x = 1, .y = 0},
-
-		},
-	}};
+	RotationOffsets rotation_offsets{};
+	size_t rotate_internal(
+		vector<Block> board, array<Coordinate, 5> o1, array<Coordinate, 5> o2,
+		size_t new_idx
+	);
 
   public:
-	std::array<Block, 4> blocks;
-	// `pattern` should only contain 4 ones, will otherwise return early, and log error.
-	std::array<Block, 4> create_blocks(uint16_t pattern, Color color);
+	array<Block, 4> blocks;
+	// `pattern` should only contain 4 ones, will otherwise return early, and log
+	// error.
+	array<Block, 4> create_blocks(Pattern pattern, Color color);
 
 	void move(int y, int x);
 
 	void fall();
 	void left();
 	void right();
-	size_t rotate(std::vector<Block> board);
+	size_t rotate_cw(vector<Block> board);
+	size_t rotate_ccw(vector<Block> board);
 
-	Tetramino(Color color, uint16_t pattern[4]);
-	Tetramino(
-		Color color, uint16_t pattern[4],
-		std::array<std::array<Coordinate, 5>, 4> rotation_tests
-	);
+	Tetramino(Color color, array<Pattern, 4> pattern);
+	Tetramino(Color color, array<Pattern, 4> pattern, RotationOffsets rotation_offsets);
 };
 
 Tetramino create_i_tet();

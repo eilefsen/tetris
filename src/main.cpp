@@ -6,6 +6,7 @@
 #include "block.hpp"
 #include "collision.hpp"
 #include "tet.hpp"
+using std::vector, std::array;
 
 const int FPS_TARGET = 60;
 
@@ -44,7 +45,7 @@ uint calculate_score(int cleared) {
 	return 0;
 }
 
-void move(Tetramino *t, Collision c, std::vector<Block> board) {
+void move(Tetramino *t, Collision c, vector<Block> board) {
 	// TODO: add key hold
 	if (IsKeyPressed(KEY_H) && !c.base.left) {
 		t->left();
@@ -57,20 +58,20 @@ void move(Tetramino *t, Collision c, std::vector<Block> board) {
 	}
 	// TODO: Write collision logic for rotate
 	if (IsKeyPressed(KEY_R)) {
-		t->rotate(board);
+		t->rotate_ccw(board);
 	}
 }
 static bool exit_window = false;
 
 void game() {
 	uint64_t cycle_count = 0;
-	std::vector<Block> blocks{};
+	vector<Block> blocks{};
 	Tetramino tet = create_random_tet();
 	Collision col{};
 
 	// game loop
 	while (!(exit_window = WindowShouldClose())) {
-		std::vector<Block> total_blocks = blocks;
+		vector<Block> total_blocks = blocks;
 		total_blocks.insert(
 			total_blocks.begin(), std::begin(tet.blocks), std::end(tet.blocks)
 		);
