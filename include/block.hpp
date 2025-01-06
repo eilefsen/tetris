@@ -26,4 +26,4 @@ std::tuple<int, std::vector<Block>> clear_blocks(std::vector<Block> blocks);
 void load_block_texture();
 void unload_block_texture();
 
-void draw_blocks(std::vector<Block> blocks);
+void draw_blocks(std::vector<Block> blocks, int x_margin, int y_margin);

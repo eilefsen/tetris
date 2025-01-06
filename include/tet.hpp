@@ -10,7 +10,7 @@ class Tetramino {
   private:
 	uint16_t pattern[4]; // Binary numbers each representing a 4x4 grid rotation
 	int x_offset = 3;
-	int y_offset = -1;
+	int y_offset = -2;
 	size_t pattern_idx = 0;
 
   public:
