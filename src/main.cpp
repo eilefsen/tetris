@@ -98,6 +98,15 @@ void move(Tetramino *t, Collision c, std::vector<Block> blocks) {
 	game_time -= 8; // This gives the player more time when rotating.
 }
 
+bool check_fail(std::array<Block, 4> blocks) {
+	for (const auto &b : blocks) {
+		if (b.pos.y < -1) {
+			return true;
+		}
+	}
+	return false;
+}
+
 int main() {
 	// init
 	SetTraceLogLevel(LOG_ALL);
@@ -110,34 +119,33 @@ int main() {
 
 	Collision col{};
 
-	bool place_flag = false;
 	uint64_t cycle_count = 0;
+	bool fail = false;
 
 	// run
 	while (!WindowShouldClose()) {
-		std::vector<Block> total_blocks = blocks;
-		total_blocks.insert(
-			total_blocks.begin(), std::begin(tet.blocks), std::end(tet.blocks)
-		);
+		// should close checked twice so that game closes in both loops
+		// game loop
+		while (!WindowShouldClose() && !fail) {
+			std::vector<Block> total_blocks = blocks;
+			total_blocks.insert(
+				total_blocks.begin(), std::begin(tet.blocks), std::end(tet.blocks)
+			);
 
-		// update
+			// update
 
-		col = check_all_collisions(tet, blocks);
-		move(&tet, col, blocks);
-		col = check_all_collisions(tet, blocks);
+			col = check_all_collisions(tet, blocks);
+			move(&tet, col, blocks);
+			col = check_all_collisions(tet, blocks);
 
-		if (game_time != 0 && game_time % frames_per_fall == 0) {
-			++cycle_count;
-			TraceLog(LOG_INFO, "cycle: %d\n", cycle_count);
-			if (!col.base.down) {
-				tet.fall();
-			}
-			game_time = 0;
-			if (col.base.down) {
-				if (!place_flag) {
-					place_flag = true;
+			if (game_time != 0 && game_time % frames_per_fall == 0) {
+				game_time = 0;
+				++cycle_count;
+				TraceLog(LOG_INFO, "cycle: %d", cycle_count);
+				if (!col.base.down) {
+					tet.fall();
+
 				} else {
-					place_flag = false;
 					int cleared;
 					tie(cleared, total_blocks) = clear_blocks(total_blocks);
 					if (cleared > 0) {
@@ -148,23 +156,30 @@ int main() {
 					}
 					blocks = total_blocks;
 					tet = create_random_tet();
+					auto obs = check_obstruction(tet.blocks, blocks);
+					if (obs.down || obs.up || obs.left || obs.right) {
+						fail = true;
+					}
+
 					if (score / 1000UL * difficulty > 0) {
-						printf("score: %d, speed: %d", score, frames_per_fall);
+						TraceLog(
+							LOG_INFO, "score: %d, speed: %d", score, frames_per_fall
+						);
 						frames_per_fall = std::max(5, frames_per_fall - 5);
 						++difficulty;
 					}
 				}
 			}
+
+			// TraceLog(LOG_INFO, "frame: %d\n", game_time);
+			BeginDrawing();
+			ClearBackground(GRAY);
+
+			draw_blocks(total_blocks);
+
+			EndDrawing();
+			++game_time;
 		}
-
-		// TraceLog(LOG_INFO, "frame: %d\n", game_time);
-		BeginDrawing();
-		ClearBackground(GRAY);
-
-		draw_blocks(total_blocks);
-
-		EndDrawing();
-		++game_time;
 	}
 
 	// close
