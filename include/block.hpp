@@ -17,6 +17,8 @@ struct Coordinate {
 struct Block {
 	Coordinate pos;
 	Color color;
+	void draw(int x_margin, int y_margin);
+	void draw();
 };
 
 // Returns a `tuple<int, vector<Block>>`, where the int is the number of lines cleared,

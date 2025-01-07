@@ -38,10 +38,15 @@ static Texture2D block_texture;
 void load_block_texture() { block_texture = LoadTexture("assets/block.png"); }
 void unload_block_texture() { UnloadTexture(block_texture); }
 
+void Block::draw(int x_margin, int y_margin) {
+	int x = (this->pos.x * BLOCK_SIZE) + x_margin;
+	int y = (this->pos.y * BLOCK_SIZE) + y_margin;
+	DrawTexture(block_texture, x, y, this->color);
+}
+void Block::draw() { draw(0, 0); }
+
 void draw_blocks(std::vector<Block> blocks, int x_margin, int y_margin) {
-	for (const auto &b : blocks) {
-		int x = (b.pos.x * BLOCK_SIZE) + x_margin;
-		int y = (b.pos.y * BLOCK_SIZE) + y_margin;
-		DrawTexture(block_texture, x, y, b.color);
+	for (auto &b : blocks) {
+		b.draw(x_margin, y_margin);
 	}
 }
