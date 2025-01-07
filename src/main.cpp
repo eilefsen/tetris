@@ -6,7 +6,7 @@
 #include "block.hpp"
 #include "collision.hpp"
 #include "tet.hpp"
-using std::vector, std::array;
+using std::vector;
 
 const int FPS_TARGET = 60;
 
@@ -63,9 +63,17 @@ void move(Tetramino *t, Collision c, vector<Block> board) {
 }
 static bool exit_window = false;
 
+void draw_next_tet(Tetramino tet) {
+	for (size_t i = 0; i < 4; ++i) {
+		DrawText("Next:", WINDOW_WIDTH - 48, 8, 16, WHITE);
+		tet.blocks[i].draw_tiny(WINDOW_WIDTH - 75, 48);
+	}
+}
+
 void game() {
 	uint64_t cycle_count = 0;
 	vector<Block> blocks{};
+	Tetramino next_tet = create_random_tet();
 	Tetramino tet = create_random_tet();
 	Collision col{};
 
@@ -104,7 +112,8 @@ void game() {
 				}
 
 				blocks = total_blocks;
-				tet = create_random_tet();
+				tet = next_tet;
+				next_tet = create_random_tet();
 
 				if (score / 1000UL * difficulty > 0) {
 					TraceLog(LOG_INFO, "score: %d, speed: %d", score, frames_per_fall);
@@ -118,6 +127,7 @@ void game() {
 		BeginDrawing();
 		ClearBackground(GRAY);
 		DrawRectangleRec(right_margin, DARKGRAY);
+		draw_next_tet(next_tet);
 		// draw dotted line
 		for (int i = 0; i < 20; i += 2) {
 			int length = WINDOW_WIDTH / 20;

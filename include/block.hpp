@@ -6,6 +6,7 @@
 #include "raylib.h"
 
 const int BLOCK_SIZE = 32.0;
+const int TINYBLOCK_SIZE = 8.0;
 const int GRID_HEIGHT = 16;
 const int GRID_WIDTH = 10;
 
@@ -19,6 +20,8 @@ struct Block {
 	Color color;
 	void draw(int x_margin, int y_margin);
 	void draw();
+	void draw_tiny(int x_margin, int y_margin);
+	void draw_tiny();
 };
 
 // Returns a `tuple<int, vector<Block>>`, where the int is the number of lines cleared,

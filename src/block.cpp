@@ -33,17 +33,30 @@ std::tuple<int, std::vector<Block>> clear_blocks(std::vector<Block> blocks) {
 	return std::make_tuple(clear_count, out);
 }
 
+static Texture2D tinyblock_texture;
 static Texture2D block_texture;
 
-void load_block_texture() { block_texture = LoadTexture("assets/block.png"); }
-void unload_block_texture() { UnloadTexture(block_texture); }
+void load_block_texture() {
+	block_texture = LoadTexture("assets/block.png");
+	tinyblock_texture = LoadTexture("assets/tinyblock.png");
+}
+void unload_block_texture() {
+	UnloadTexture(block_texture);
+	UnloadTexture(tinyblock_texture);
+}
 
+void Block::draw() { draw(0, 0); }
 void Block::draw(int x_margin, int y_margin) {
 	int x = (this->pos.x * BLOCK_SIZE) + x_margin;
 	int y = (this->pos.y * BLOCK_SIZE) + y_margin;
 	DrawTexture(block_texture, x, y, this->color);
 }
-void Block::draw() { draw(0, 0); }
+void Block::draw_tiny() { draw_tiny(0, 0); }
+void Block::draw_tiny(int x_margin, int y_margin) {
+	int x = (this->pos.x * TINYBLOCK_SIZE) + x_margin;
+	int y = (this->pos.y * TINYBLOCK_SIZE) + y_margin;
+	DrawTexture(tinyblock_texture, x, y, this->color);
+}
 
 void draw_blocks(std::vector<Block> blocks, int x_margin, int y_margin) {
 	for (auto &b : blocks) {

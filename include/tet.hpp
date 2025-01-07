@@ -70,3 +70,5 @@ Tetramino create_o_tet();
 Tetramino create_s_tet();
 Tetramino create_z_tet();
 Tetramino create_random_tet();
+
+void draw_next_tet();
