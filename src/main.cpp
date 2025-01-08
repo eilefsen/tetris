@@ -61,7 +61,7 @@ void move(Tetramino *t, Collision c, vector<Block> board) {
 		while (!(check_collision(t->blocks, board).down)) {
 			t->fall();
 		}
-		game_time = frames_per_fall / 2;
+		game_time = frames_per_fall - 1;
 	}
 	// TODO: Write collision logic for rotate
 	if (IsKeyPressed(KEY_R)) {
