@@ -93,6 +93,11 @@ void game() {
 
 		col = check_all_collisions(tet, blocks);
 		move(&tet, col, blocks);
+		if (IsKeyPressed(KEY_S)) {
+			auto temp = tet;
+			tet = next_tet;
+			next_tet = temp;
+		}
 		col = check_all_collisions(tet, blocks);
 
 		if (game_time != 0 && game_time >= frames_per_fall) {
