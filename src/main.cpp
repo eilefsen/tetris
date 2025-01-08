@@ -121,11 +121,10 @@ void game() {
 				tet = next_tet;
 				next_tet = create_random_tet();
 
-				if (score / 1000UL * difficulty > 0) {
-					TraceLog(LOG_INFO, "score: %d, speed: %d", score, frames_per_fall);
-					frames_per_fall = std::max(5, frames_per_fall - 5);
-					++difficulty;
-				}
+				difficulty = (score / 500);
+
+				printf("difficulty:%d, score: %d\n", difficulty, score);
+				frames_per_fall = std::max(5, 40 - (5 * static_cast<int>(difficulty)));
 			}
 		}
 
