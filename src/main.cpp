@@ -68,7 +68,6 @@ void move(Tetramino *t, Collision c, vector<Block> board) {
 		t->rotate_ccw(board);
 	}
 }
-static bool exit_window = false;
 
 void draw_next_tet(Tetramino tet) {
 	for (size_t i = 0; i < 4; ++i) {
@@ -77,6 +76,7 @@ void draw_next_tet(Tetramino tet) {
 	}
 }
 
+static bool exit_window = false;
 void game() {
 	uint64_t cycle_count = 0;
 	vector<Block> blocks{};
@@ -91,17 +91,16 @@ void game() {
 			total_blocks.begin(), std::begin(tet.blocks), std::end(tet.blocks)
 		);
 
-		// update
-
 		col = check_all_collisions(tet, blocks);
 		move(&tet, col, blocks);
 		col = check_all_collisions(tet, blocks);
 
-		if (game_time != 0 && game_time % frames_per_fall == 0) {
+		if (game_time != 0 && game_time >= frames_per_fall) {
 			game_time = 0;
 			++cycle_count;
 			TraceLog(LOG_INFO, "cycle: %d", cycle_count);
 			if (!col.base.down) {
+				TraceLog(LOG_INFO, "Collision down");
 				tet.fall();
 
 			} else {
@@ -133,7 +132,7 @@ void game() {
 		// TraceLog(LOG_INFO, "frame: %d\n", game_time);
 		BeginDrawing();
 		ClearBackground(GRAY);
-		DrawRectangleRec(right_margin, DARKGRAY);
+		DrawRectangleRec(right_margin, ColorAlpha(DARKGRAY, 0.4F));
 		draw_next_tet(next_tet);
 		// draw dotted line
 		for (int i = 0; i < 20; i += 2) {

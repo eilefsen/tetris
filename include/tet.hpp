@@ -36,7 +36,7 @@ class Tetramino {
   private:
 	array<Pattern, 4> pattern;
 	int x_offset = 3;
-	int y_offset = -2;
+	int y_offset = -3;
 	size_t pattern_idx = 0;
 	RotationOffsets rotation_offsets{};
 	size_t rotate_internal(
