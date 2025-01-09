@@ -57,13 +57,6 @@ void move(Tetramino *t, Collision c, vector<Block> board) {
 		t->fall();
 		game_time = 0;
 	}
-	if (IsKeyPressed(KEY_SPACE)) {
-		while (!(check_collision(t->blocks, board).down)) {
-			t->fall();
-		}
-		game_time = frames_per_fall - 1;
-	}
-	// TODO: Write collision logic for rotate
 	if (IsKeyPressed(KEY_R)) {
 		t->rotate_ccw(board);
 	}
@@ -191,8 +184,20 @@ void game() {
 				DARKGRAY
 			);
 		}
-		draw_blocks(total_blocks, 0, WINDOW_HEIGHT_MARGIN);
 
+		// draw a ghost tetramino where it would land
+		auto ghost_tet = tet;
+		while (!(check_collision(ghost_tet.blocks, blocks).down)) {
+			ghost_tet.fall();
+		}
+		draw_blocks(ghost_tet.blocks, 0, WINDOW_HEIGHT_MARGIN, 0.2F);
+		// instantly replace tetramino with ghost tetramino, (place it immediately)
+		if (IsKeyPressed(KEY_SPACE)) {
+			tet = ghost_tet;
+			game_time = frames_per_fall - 1;
+		}
+
+		draw_blocks(total_blocks, 0, WINDOW_HEIGHT_MARGIN);
 		EndDrawing();
 		++game_time;
 	}
