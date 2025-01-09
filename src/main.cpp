@@ -20,10 +20,10 @@ const int WINDOW_WIDTH_MARGIN_START = WINDOW_WIDTH - WINDOW_WIDTH_MARGIN;
 const int WINDOW_HEIGHT_MARGIN_START = WINDOW_HEIGHT - WINDOW_HEIGHT_MARGIN;
 
 const Rectangle right_margin{
-	.width = WINDOW_WIDTH_MARGIN,
-	.height = WINDOW_HEIGHT,
 	.x = WINDOW_WIDTH_MARGIN_START,
 	.y = 0,
+	.width = WINDOW_WIDTH_MARGIN,
+	.height = WINDOW_HEIGHT,
 };
 
 static uint score = 0;
