@@ -73,7 +73,7 @@ void draw_next_tet(Tetramino tet) {
 	DrawText("Next:", WINDOW_WIDTH_MARGIN_START + 8, 8, 20, WHITE);
 	for (size_t i = 0; i < 4; ++i) {
 		tet.blocks[i].draw_medium(
-			-tet.get_x_offset(), -tet.get_y_offset(), WINDOW_WIDTH_MARGIN_START - 8, 20
+			WINDOW_WIDTH_MARGIN_START - 8, 20, -tet.get_x_offset(), -tet.get_y_offset()
 		);
 	}
 }
@@ -82,10 +82,10 @@ void draw_hold_tet(std::optional<Tetramino> tet) {
 	if (tet.has_value()) {
 		for (size_t i = 0; i < 4; ++i) {
 			tet.value().blocks[i].draw_medium(
-				-tet.value().get_x_offset(),
-				-tet.value().get_y_offset(),
 				WINDOW_WIDTH_MARGIN_START - 8,
-				92
+				92,
+				-tet.value().get_x_offset(),
+				-tet.value().get_y_offset()
 			);
 		}
 	}

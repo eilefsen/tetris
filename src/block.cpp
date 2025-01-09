@@ -33,9 +33,9 @@ std::tuple<int, std::vector<Block>> clear_blocks(std::vector<Block> blocks) {
 	return std::make_tuple(clear_count, out);
 }
 
-static Texture2D block_texture;
-static Texture2D mediumblock_texture;
-static Texture2D tinyblock_texture;
+Texture2D block_texture;
+Texture2D mediumblock_texture;
+Texture2D tinyblock_texture;
 
 void load_block_texture() {
 	block_texture = LoadTexture("assets/block.png");
@@ -48,32 +48,43 @@ void unload_block_texture() {
 	UnloadTexture(tinyblock_texture);
 }
 
-void Block::draw() { draw(0, 0); }
-void Block::draw(int x_margin, int y_margin) {
-	int x = (this->pos.x * BLOCK_SIZE) + x_margin;
-	int y = (this->pos.y * BLOCK_SIZE) + y_margin;
-	DrawTexture(block_texture, x, y, this->color);
-}
-void Block::draw_tiny() { draw_tiny(0, 0); }
-void Block::draw_tiny(int x_margin, int y_margin) { draw_tiny(0, 0, x_margin, y_margin); }
-void Block::draw_tiny(int x_offset, int y_offset, int x_margin, int y_margin) {
-	int x = ((this->pos.x + x_offset) * TINYBLOCK_SIZE) + x_margin;
-	int y = ((this->pos.y + y_offset) * TINYBLOCK_SIZE) + y_margin;
-	DrawTexture(tinyblock_texture, x, y, this->color);
+void Block::draw(int x_margin, int y_margin, int x_offset, int y_offset, float opacity) {
+	return this->draw_pro(x_margin, y_margin, x_offset, y_offset, block_texture, opacity);
 }
 
-void Block::draw_medium() { draw_tiny(0, 0); }
-void Block::draw_medium(int x_margin, int y_margin) {
-	draw_tiny(0, 0, x_margin, y_margin);
-}
-void Block::draw_medium(int x_offset, int y_offset, int x_margin, int y_margin) {
-	int x = ((this->pos.x + x_offset) * MEDIUMBLOCK_SIZE) + x_margin;
-	int y = ((this->pos.y + y_offset) * MEDIUMBLOCK_SIZE) + y_margin;
-	DrawTexture(mediumblock_texture, x, y, this->color);
+void Block::draw_medium(
+	int x_margin, int y_margin, int x_offset, int y_offset, float opacity
+) {
+	return this->draw_pro(
+		x_margin, y_margin, x_offset, y_offset, mediumblock_texture, opacity
+	);
 }
 
-void draw_blocks(std::vector<Block> blocks, int x_margin, int y_margin) {
+void Block::draw_tiny(
+	int x_margin, int y_margin, int x_offset, int y_offset, float opacity
+) {
+	return this->draw_pro(
+		x_margin, y_margin, x_offset, y_offset, tinyblock_texture, opacity
+	);
+}
+
+void Block::draw_pro(
+	int x_margin, int y_margin, int x_offset, int y_offset, Texture2D texture,
+	float opacity
+) {
+	int x = ((this->pos.x + x_offset) * texture.width) + x_margin;
+	int y = ((this->pos.y + y_offset) * texture.height) + y_margin;
+	DrawTexture(texture, x, y, ColorAlpha(this->color, opacity));
+}
+
+void draw_blocks(std::vector<Block> blocks, int x_margin, int y_margin, float opacity) {
 	for (auto &b : blocks) {
-		b.draw(x_margin, y_margin);
+		b.draw(x_margin, y_margin, 0, 0, opacity);
+	}
+}
+
+void draw_blocks(std::array<Block, 4> blocks, int x_margin, int y_margin, float opacity) {
+	for (auto &b : blocks) {
+		b.draw(x_margin, y_margin, 0, 0, opacity);
 	}
 }

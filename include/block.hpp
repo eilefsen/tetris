@@ -19,21 +19,36 @@ struct Coordinate {
 struct Block {
 	Coordinate pos;
 	Color color;
-	void draw(int x_margin, int y_margin);
-	void draw();
-	void draw_tiny(int x_offset, int y_offset, int x_margin, int y_margin);
-	void draw_tiny(int x_margin, int y_margin);
-	void draw_tiny();
-	void draw_medium(int x_offset, int y_offset, int x_margin, int y_margin);
-	void draw_medium(int x_margin, int y_margin);
-	void draw_medium();
+
+	void draw_pro(
+		int x_margin, int y_margin, int x_offset, int y_offset, Texture2D texture,
+		float opacity
+	);
+
+	void draw(
+		int x_margin = 0, int y_margin = 0, int x_offset = 0, int y_offset = 0,
+		float opacity = 1
+	);
+	void draw_medium(
+		int x_margin = 0, int y_margin = 0, int x_offset = 0, int y_offset = 0,
+		float opacity = 1
+	);
+	void draw_tiny(
+		int x_margin = 0, int y_margin = 0, int x_offset = 0, int y_offset = 0,
+		float opacity = 1
+	);
 };
 
-// Returns a `tuple<int, vector<Block>>`, where the int is the number of lines cleared,
-// and the vector is the transformed vector of blocks
+// Returns a `tuple<int, vector<Block>>`, where the int is the number of lines
+// cleared, and the vector is the transformed vector of blocks
 std::tuple<int, std::vector<Block>> clear_blocks(std::vector<Block> blocks);
 
 void load_block_texture();
 void unload_block_texture();
 
-void draw_blocks(std::vector<Block> blocks, int x_margin, int y_margin);
+void draw_blocks(
+	std::vector<Block> blocks, int x_margin, int y_margin, float opacity = 1
+);
+void draw_blocks(
+	std::array<Block, 4> blocks, int x_margin, int y_margin, float opacity = 1
+);
