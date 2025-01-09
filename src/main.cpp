@@ -26,10 +26,7 @@ const Rectangle right_margin{
 	.y = 0,
 };
 
-static int game_time = 0;
 static uint score = 0;
-static int frames_per_fall = 40; // reduce this to increase speed and difficulty
-static uint difficulty = 0;		 // reduce this to increase speed and difficulty
 
 uint calculate_score(int cleared) {
 	switch (cleared) {
@@ -43,23 +40,6 @@ uint calculate_score(int cleared) {
 		return 800;
 	}
 	return 0;
-}
-
-void move(Tetramino *t, Collision c, vector<Block> board) {
-	// TODO: add key hold
-	if (IsKeyPressed(KEY_H) && !c.base.left) {
-		t->left();
-	}
-	if (IsKeyPressed(KEY_L) && !c.base.right) {
-		t->right();
-	}
-	if (IsKeyPressed(KEY_J) && !c.base.down) {
-		t->fall();
-		game_time = 0;
-	}
-	if (IsKeyPressed(KEY_R)) {
-		t->rotate_ccw(board);
-	}
 }
 
 void draw_next_tet(Tetramino tet) {
@@ -84,24 +64,57 @@ void draw_hold_tet(std::optional<Tetramino> tet) {
 	}
 }
 
-static bool exit_window = false;
-void game() {
+// returns true when window should close.
+bool game() {
 	uint64_t cycle_count = 0;
+	int game_time = 0;
+	int frames_per_fall = 40; // reduce this to increase speed and difficulty
+	uint difficulty = 0;	  // reduce this to increase speed and difficulty
 	vector<Block> blocks{};
 	std::optional<Tetramino> hold_tet;
 	Tetramino next_tet = create_random_tet();
 	Tetramino tet = create_random_tet();
 	Collision col{};
+	int rotated_count = 0;
 
 	// game loop
-	while (!(exit_window = WindowShouldClose())) {
+	while (!WindowShouldClose()) {
 		vector<Block> total_blocks = blocks;
 		total_blocks.insert(
 			total_blocks.begin(), std::begin(tet.blocks), std::end(tet.blocks)
 		);
 
 		col = check_all_collisions(tet, blocks);
-		move(&tet, col, blocks);
+		if (IsKeyPressed(KEY_H) && !col.base.left) {
+			tet.left();
+		}
+		if (IsKeyPressed(KEY_L) && !col.base.right) {
+			tet.right();
+		}
+		if (IsKeyPressed(KEY_J) && !col.base.down) {
+			tet.fall();
+			game_time = 0;
+		}
+		if (IsKeyPressed(KEY_R)) {
+			tet.rotate_ccw(blocks);
+			if (rotated_count < 3) {
+				game_time = game_time / 2;
+			}
+
+			++rotated_count;
+		}
+
+		// draw a ghost tetramino where it would land (draw happens below)
+		auto ghost_tet = tet;
+		while (!(check_collision(ghost_tet.blocks, blocks).down)) {
+			ghost_tet.fall();
+		}
+		// instantly replace tetramino with ghost tetramino, (place it immediately)
+		if (IsKeyPressed(KEY_SPACE)) {
+			tet = ghost_tet;
+			game_time = frames_per_fall - 1;
+		}
+
 		if (IsKeyPressed(KEY_S)) {
 			auto temp = tet;
 
@@ -114,11 +127,11 @@ void game() {
 				next_tet = create_random_tet();
 			}
 		}
-		// FIXME: sometimes detects a collision one block higher than it should.
 		col = check_all_collisions(tet, blocks);
 
 		if (game_time != 0 && game_time >= frames_per_fall) {
 			game_time = 0;
+			rotated_count = 0;
 			++cycle_count;
 			TraceLog(LOG_INFO, "cycle: %d", cycle_count);
 			if (!col.base.down) {
@@ -135,7 +148,7 @@ void game() {
 				// fail if placed tet is above 0
 				for (size_t i = 0; i < 4; ++i) {
 					if (tet.blocks[i].pos.y < 0) {
-						return;
+						return false;
 					}
 				}
 
@@ -146,7 +159,7 @@ void game() {
 				difficulty = (score / 500);
 
 				printf("difficulty:%d, score: %d\n", difficulty, score);
-				frames_per_fall = std::max(5, 40 - (5 * static_cast<int>(difficulty)));
+				frames_per_fall = std::max(5, 40 - (3 * static_cast<int>(difficulty)));
 			}
 		}
 
@@ -169,9 +182,7 @@ void game() {
 			WHITE
 		);
 		draw_next_tet(next_tet);
-		if (hold_tet.has_value()) {
-			draw_hold_tet(hold_tet.value());
-		}
+		draw_hold_tet(hold_tet);
 		// draw dotted line
 		for (int i = 0; i < 16; i += 2) {
 			int length = WINDOW_WIDTH / 20;
@@ -185,22 +196,13 @@ void game() {
 			);
 		}
 
-		// draw a ghost tetramino where it would land
-		auto ghost_tet = tet;
-		while (!(check_collision(ghost_tet.blocks, blocks).down)) {
-			ghost_tet.fall();
-		}
 		draw_blocks(ghost_tet.blocks, 0, WINDOW_HEIGHT_MARGIN, 0.2F);
-		// instantly replace tetramino with ghost tetramino, (place it immediately)
-		if (IsKeyPressed(KEY_SPACE)) {
-			tet = ghost_tet;
-			game_time = frames_per_fall - 1;
-		}
 
 		draw_blocks(total_blocks, 0, WINDOW_HEIGHT_MARGIN);
 		EndDrawing();
 		++game_time;
 	}
+	return true;
 }
 
 int main() {
@@ -212,15 +214,18 @@ int main() {
 
 	game();
 
-	while (!(exit_window = WindowShouldClose())) {
+	while (!WindowShouldClose()) {
 		if (IsKeyPressed(KEY_R)) {
-			game();
+			if (game()) {
+				return 0;
+			} else {
+				TraceLog(LOG_INFO, "Restarted!");
+			}
 		}
 		BeginDrawing();
 
 		std::string score_str = std::format("score: {}", score);
 		size_t loss_length = std::max(score_str.length(), static_cast<size_t>(11));
-		TraceLog(LOG_DEBUG, "loss_length: %d", loss_length);
 		size_t loss_width = (loss_length * 14);
 
 		int text_x = static_cast<int>((WINDOW_WIDTH / 2) - (loss_width / 2));
@@ -233,7 +238,7 @@ int main() {
 				.width = static_cast<float>(loss_width),
 				.height = (24 * 4) - 6
 			},
-			ColorAlpha(DARKGRAY, 0.4F)
+			ColorAlpha(DARKGRAY, 0.3F)
 		);
 		DrawText("YOU LOSE.", text_x, text_y, 24, WHITE);
 		DrawText(score_str.c_str(), text_x, text_y + 48, 24, WHITE);
