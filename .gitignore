@@ -1,5 +1,5 @@
 .project.el
 build/
-assets/
+*.aseprite
 .cache/
 .DS_Store
