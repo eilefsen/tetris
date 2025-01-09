@@ -11,7 +11,7 @@ using std::vector;
 const int FPS_TARGET = 60;
 
 const int WINDOW_HEIGHT_MARGIN = 2 * BLOCK_SIZE;
-const int WINDOW_WIDTH_MARGIN = 2 * BLOCK_SIZE;
+const int WINDOW_WIDTH_MARGIN = (2 * BLOCK_SIZE) + (BLOCK_SIZE / 2);
 
 const int WINDOW_WIDTH = (GRID_WIDTH * BLOCK_SIZE) + WINDOW_WIDTH_MARGIN;
 const int WINDOW_HEIGHT = (GRID_HEIGHT * BLOCK_SIZE) + WINDOW_HEIGHT_MARGIN;
@@ -70,9 +70,24 @@ void move(Tetramino *t, Collision c, vector<Block> board) {
 }
 
 void draw_next_tet(Tetramino tet) {
+	DrawText("Next:", WINDOW_WIDTH_MARGIN_START + 8, 8, 20, WHITE);
 	for (size_t i = 0; i < 4; ++i) {
-		DrawText("Next:", WINDOW_WIDTH - 48, 8, 16, WHITE);
-		tet.blocks[i].draw_tiny(WINDOW_WIDTH - 75, 48);
+		tet.blocks[i].draw_medium(
+			-tet.get_x_offset(), -tet.get_y_offset(), WINDOW_WIDTH_MARGIN_START - 8, 20
+		);
+	}
+}
+void draw_hold_tet(std::optional<Tetramino> tet) {
+	DrawText("Hold:", WINDOW_WIDTH_MARGIN_START + 8, 80, 20, WHITE);
+	if (tet.has_value()) {
+		for (size_t i = 0; i < 4; ++i) {
+			tet.value().blocks[i].draw_medium(
+				-tet.value().get_x_offset(),
+				-tet.value().get_y_offset(),
+				WINDOW_WIDTH_MARGIN_START - 8,
+				92
+			);
+		}
 	}
 }
 
@@ -80,6 +95,7 @@ static bool exit_window = false;
 void game() {
 	uint64_t cycle_count = 0;
 	vector<Block> blocks{};
+	std::optional<Tetramino> hold_tet;
 	Tetramino next_tet = create_random_tet();
 	Tetramino tet = create_random_tet();
 	Collision col{};
@@ -95,9 +111,17 @@ void game() {
 		move(&tet, col, blocks);
 		if (IsKeyPressed(KEY_S)) {
 			auto temp = tet;
-			tet = next_tet;
-			next_tet = temp;
+
+			if (hold_tet.has_value()) {
+				tet.set_pattern(hold_tet->get_pattern(), hold_tet->blocks[0].color);
+				hold_tet = temp;
+			} else {
+				tet = next_tet;
+				hold_tet = temp;
+				next_tet = create_random_tet();
+			}
 		}
+		// FIXME: sometimes detects a collision one block higher than it should.
 		col = check_all_collisions(tet, blocks);
 
 		if (game_time != 0 && game_time >= frames_per_fall) {
@@ -136,10 +160,27 @@ void game() {
 		// TraceLog(LOG_INFO, "frame: %d\n", game_time);
 		BeginDrawing();
 		ClearBackground(GRAY);
-		DrawRectangleRec(right_margin, ColorAlpha(DARKGRAY, 0.4F));
+		DrawRectangleRec(right_margin, DARKGRAY);
+		DrawText(
+			std::format("level:\n{}", difficulty).c_str(),
+			WINDOW_WIDTH_MARGIN_START + 4,
+			WINDOW_HEIGHT_MARGIN_START - 24,
+			16,
+			WHITE
+		);
+		DrawText(
+			std::format("score:\n{}", score).c_str(),
+			WINDOW_WIDTH_MARGIN_START + 4,
+			WINDOW_HEIGHT_MARGIN_START + 24,
+			16,
+			WHITE
+		);
 		draw_next_tet(next_tet);
+		if (hold_tet.has_value()) {
+			draw_hold_tet(hold_tet.value());
+		}
 		// draw dotted line
-		for (int i = 0; i < 20; i += 2) {
+		for (int i = 0; i < 16; i += 2) {
 			int length = WINDOW_WIDTH / 20;
 			DrawLineEx(
 				Vector2{.x = static_cast<float>(length * i), .y = WINDOW_HEIGHT_MARGIN},
@@ -150,13 +191,6 @@ void game() {
 				DARKGRAY
 			);
 		}
-		DrawText(
-			&std::format("score:\n{}", score)[0],
-			WINDOW_WIDTH_MARGIN_START + 5,
-			WINDOW_HEIGHT_MARGIN_START + 24,
-			16,
-			WHITE
-		);
 		draw_blocks(total_blocks, 0, WINDOW_HEIGHT_MARGIN);
 
 		EndDrawing();
@@ -179,24 +213,25 @@ int main() {
 		}
 		BeginDrawing();
 
-		int text_x = (WINDOW_WIDTH / 2) - (24 * 3);
+		std::string score_str = std::format("score: {}", score);
+		size_t loss_length = std::max(score_str.length(), static_cast<size_t>(11));
+		TraceLog(LOG_DEBUG, "loss_length: %d", loss_length);
+		size_t loss_width = (loss_length * 14);
+
+		int text_x = static_cast<int>((WINDOW_WIDTH / 2) - (loss_width / 2));
 		int text_y = (WINDOW_HEIGHT / 2) - 24;
+
 		DrawRectangleRec(
 			Rectangle{
 				.x = static_cast<float>(text_x - 12),
 				.y = static_cast<float>(text_y - 12),
-				.width = (24 * 5) + 12,
-				.height = 24 * 5
+				.width = static_cast<float>(loss_width),
+				.height = (24 * 4) - 6
 			},
 			ColorAlpha(DARKGRAY, 0.4F)
 		);
-		DrawText(
-			&std::format("You lose.\n\n Score:\n  {}", score)[0],
-			text_x,
-			text_y,
-			24,
-			WHITE
-		);
+		DrawText("YOU LOSE.", text_x, text_y, 24, WHITE);
+		DrawText(score_str.c_str(), text_x, text_y + 48, 24, WHITE);
 		EndDrawing();
 	}
 

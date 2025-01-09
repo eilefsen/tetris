@@ -69,6 +69,11 @@ void Tetramino::move(int x, int y) {
 	}
 }
 
+void Tetramino::set_pattern(array<Pattern, 4> ptn, Color clr) {
+	this->pattern = ptn;
+	this->blocks = this->create_blocks(pattern[pattern_idx], clr);
+}
+
 size_t Tetramino::rotate_internal(
 	vector<Block> board, array<Coordinate, 5> o1, array<Coordinate, 5> o2, size_t new_idx
 ) {

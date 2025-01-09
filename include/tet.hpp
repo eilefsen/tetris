@@ -58,6 +58,12 @@ class Tetramino {
 	size_t rotate_cw(vector<Block> board);
 	size_t rotate_ccw(vector<Block> board);
 
+	array<Pattern, 4> get_pattern() { return pattern; }
+	void set_pattern(array<Pattern, 4> ptn, Color clr);
+
+	int get_x_offset() { return x_offset; }
+	int get_y_offset() { return y_offset; }
+
 	Tetramino(Color color, array<Pattern, 4> pattern);
 	Tetramino(Color color, array<Pattern, 4> pattern, RotationOffsets rotation_offsets);
 };
