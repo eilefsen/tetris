@@ -38,9 +38,9 @@ Texture2D mediumblock_texture;
 Texture2D tinyblock_texture;
 
 void load_block_texture() {
-	block_texture = LoadTexture("assets/block.png");
-	mediumblock_texture = LoadTexture("assets/mediumblock.png");
-	tinyblock_texture = LoadTexture("assets/tinyblock.png");
+	block_texture = LoadTexture("data/block.png");
+	mediumblock_texture = LoadTexture("data/mediumblock.png");
+	tinyblock_texture = LoadTexture("data/tinyblock.png");
 }
 void unload_block_texture() {
 	UnloadTexture(block_texture);
